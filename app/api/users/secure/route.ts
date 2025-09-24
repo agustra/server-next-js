@@ -1,17 +1,33 @@
 import { verifyToken } from '@/app/lib/auth'
 
 function generateSecureUsers(start: number, length: number) {
+  const firstNames = ['Alex', 'Emma', 'Ryan', 'Sophia', 'Nathan', 'Isabella', 'Lucas', 'Mia', 'Ethan', 'Charlotte', 'Mason', 'Amelia', 'Logan', 'Harper', 'Jacob', 'Evelyn', 'Noah', 'Abigail', 'Liam', 'Emily', 'Oliver', 'Elizabeth', 'Elijah', 'Sofia', 'James', 'Avery', 'Benjamin', 'Ella', 'Lucas', 'Madison', 'Henry', 'Scarlett', 'Alexander', 'Victoria', 'Michael', 'Aria', 'Daniel', 'Grace', 'Matthew', 'Chloe', 'Jackson', 'Camila', 'Sebastian', 'Penelope', 'Jack', 'Riley', 'Aiden', 'Layla', 'Owen', 'Lillian']
+  const lastNames = ['Anderson', 'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Rodriguez', 'Lewis', 'Lee', 'Walker', 'Hall', 'Allen', 'Young', 'Hernandez', 'King', 'Wright', 'Lopez', 'Hill', 'Scott', 'Green', 'Adams', 'Baker', 'Gonzalez', 'Nelson', 'Carter', 'Mitchell', 'Perez', 'Roberts', 'Turner', 'Phillips', 'Campbell', 'Parker', 'Evans', 'Edwards', 'Collins', 'Stewart', 'Sanchez', 'Morris', 'Rogers', 'Reed', 'Cook', 'Morgan', 'Bell', 'Murphy', 'Bailey', 'Rivera', 'Cooper', 'Richardson', 'Cox', 'Howard']
+  const domains = ['company.com', 'corp.com', 'enterprise.com', 'business.com', 'secure.com']
+  const departments = ['IT', 'HR', 'Finance', 'Marketing', 'Sales', 'Operations', 'Legal', 'R&D']
+  
   const users = []
   for (let i = start + 1; i <= start + length; i++) {
+    const firstName = firstNames[(i - 1) % firstNames.length]
+    const lastName = lastNames[Math.floor((i - 1) / firstNames.length) % lastNames.length]
+    const domain = domains[(i - 1) % domains.length]
+    const department = departments[(i - 1) % departments.length]
+    
+    // Generate random date within last 2 years
+    const randomDays = Math.floor(Math.random() * 730) // 2 years in days
+    const createdAt = new Date(Date.now() - (randomDays * 24 * 60 * 60 * 1000))
+    
     users.push({
       id: i,
-      firstName: `SecureUser${i}`,
-      lastName: `Last${i}`,
-      email: `secure${i}@example.com`,
-      phone: `+1-555-${String(i).padStart(4, '0')}`,
-      age: 18 + (i % 50),
-      salary: 50000 + (i * 1000),
-      department: ['IT', 'HR', 'Finance', 'Marketing'][i % 4]
+      firstName,
+      lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i > 2500 ? i : ''}@${domain}`,
+      phone: `+1-${Math.floor(Math.random() * 900) + 100}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+      age: 22 + (i % 43),
+      salary: 45000 + (i * 1500) + Math.floor(Math.random() * 25000),
+      department,
+      avatar: `https://api.dicebear.com/7.x/personas/svg?seed=${firstName}${lastName}${i}`,
+      created_at: createdAt.toISOString().split('T')[0] // YYYY-MM-DD format
     })
   }
   return users
@@ -41,14 +57,107 @@ export async function GET(request: Request) {
     const draw = searchParams.get('draw') || '1'
     const start = parseInt(searchParams.get('start') || '0')
     const length = parseInt(searchParams.get('length') || '10')
+    const searchValue = searchParams.get('search[value]') || ''
     
-    const users = generateSecureUsers(start, length)
+    // Column-specific searches
+    const firstNameSearch = searchParams.get('columns[1][search][value]') || ''
+    const lastNameSearch = searchParams.get('columns[2][search][value]') || ''
+    const emailSearch = searchParams.get('columns[3][search][value]') || ''
+    const phoneSearch = searchParams.get('columns[4][search][value]') || ''
+    const ageSearch = searchParams.get('columns[5][search][value]') || ''
+    const salarySearch = searchParams.get('columns[6][search][value]') || ''
+    const departmentSearch = searchParams.get('columns[7][search][value]') || ''
+    const createdAtSearch = searchParams.get('columns[8][search][value]') || ''
+    
+    // Date range filters
+    const dateFrom = searchParams.get('dateFrom') || ''
+    const dateTo = searchParams.get('dateTo') || ''
+    
+    // Generate all users for filtering
+    const allUsers = generateSecureUsers(0, 5000)
+    
+    // Filter users based on global search
+    let filteredUsers = allUsers
+    if (searchValue) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.firstName.toLowerCase().includes(searchValue.toLowerCase()) ||
+        user.lastName.toLowerCase().includes(searchValue.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
+        user.phone.includes(searchValue) ||
+        user.department.toLowerCase().includes(searchValue.toLowerCase())
+      )
+    }
+    
+    // Filter by column-specific searches
+    if (firstNameSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.firstName.toLowerCase().includes(firstNameSearch.toLowerCase())
+      )
+    }
+    
+    if (lastNameSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.lastName.toLowerCase().includes(lastNameSearch.toLowerCase())
+      )
+    }
+    
+    if (emailSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.email.toLowerCase().includes(emailSearch.toLowerCase())
+      )
+    }
+    
+    if (phoneSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.phone.includes(phoneSearch)
+      )
+    }
+    
+    if (ageSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.age.toString().includes(ageSearch)
+      )
+    }
+    
+    if (salarySearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.salary.toString().includes(salarySearch)
+      )
+    }
+    
+    if (departmentSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.department.toLowerCase().includes(departmentSearch.toLowerCase())
+      )
+    }
+    
+    if (createdAtSearch) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.created_at.includes(createdAtSearch)
+      )
+    }
+    
+    // Date range filtering
+    if (dateFrom) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.created_at >= dateFrom
+      )
+    }
+    
+    if (dateTo) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.created_at <= dateTo
+      )
+    }
+    
+    // Paginate filtered results
+    const paginatedUsers = filteredUsers.slice(start, start + length)
 
     const response = Response.json({
       draw: parseInt(draw),
       recordsTotal: 5000,
-      recordsFiltered: 5000,
-      data: users
+      recordsFiltered: filteredUsers.length,
+      data: paginatedUsers
     })
 
     response.headers.set('Access-Control-Allow-Origin', '*')

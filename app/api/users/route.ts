@@ -9,6 +9,10 @@ function generateUsers(start: number, length: number) {
     const lastName = lastNames[Math.floor((i - 1) / firstNames.length) % lastNames.length]
     const domain = domains[(i - 1) % domains.length]
     
+    // Generate random date within last 3 years
+    const randomDays = Math.floor(Math.random() * 1095) // 3 years in days
+    const createdAt = new Date(Date.now() - (randomDays * 24 * 60 * 60 * 1000))
+    
     users.push({
       id: i,
       firstName,
@@ -16,7 +20,8 @@ function generateUsers(start: number, length: number) {
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i > 2500 ? i : ''}@${domain}`,
       phone: `+1-${Math.floor(Math.random() * 900) + 100}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
       age: 18 + (i % 50),
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName}${lastName}${i}`
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName}${lastName}${i}`,
+      created_at: createdAt.toISOString().split('T')[0] // YYYY-MM-DD format
     })
   }
   return users
@@ -35,6 +40,11 @@ export async function GET(request: Request) {
   const emailSearch = searchParams.get('columns[3][search][value]') || ''
   const phoneSearch = searchParams.get('columns[4][search][value]') || ''
   const ageSearch = searchParams.get('columns[5][search][value]') || ''
+  const createdAtSearch = searchParams.get('columns[6][search][value]') || ''
+  
+  // Date range filters
+  const dateFrom = searchParams.get('dateFrom') || ''
+  const dateTo = searchParams.get('dateTo') || ''
   
   console.log('🔍 Search values:', {
     global: searchValue,
@@ -87,6 +97,25 @@ export async function GET(request: Request) {
   if (ageSearch) {
     filteredUsers = filteredUsers.filter(user => 
       user.age.toString().includes(ageSearch)
+    )
+  }
+  
+  if (createdAtSearch) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at.includes(createdAtSearch)
+    )
+  }
+  
+  // Date range filtering
+  if (dateFrom) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at >= dateFrom
+    )
+  }
+  
+  if (dateTo) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at <= dateTo
     )
   }
   
