@@ -15,7 +15,8 @@ function generateUsers(start: number, length: number) {
       lastName,
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i > 2500 ? i : ''}@${domain}`,
       phone: `+1-${Math.floor(Math.random() * 900) + 100}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      age: 18 + (i % 50)
+      age: 18 + (i % 50),
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName}${lastName}${i}`
     })
   }
   return users
