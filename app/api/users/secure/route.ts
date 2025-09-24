@@ -131,9 +131,11 @@ function generateSecureUsers(start: number, length: number) {
     const domain = domains[(i - 1) % domains.length];
     const department = departments[(i - 1) % departments.length];
 
-    // Generate random date within last 3 years and next 1 year
-    const randomDays = Math.floor(Math.random() * 1460) - 365; // 4 years range, 1 year future
-    const createdAt = new Date(Date.now() + randomDays * 24 * 60 * 60 * 1000);
+    // Generate random date from 2023 to now
+    const start2023 = new Date('2023-01-01').getTime()
+    const now = Date.now()
+    const randomTime = start2023 + Math.random() * (now - start2023)
+    const createdAt = new Date(randomTime)
 
     users.push({
       id: i,
