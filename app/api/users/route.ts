@@ -9,9 +9,9 @@ function generateUsers(start: number, length: number) {
     const lastName = lastNames[Math.floor((i - 1) / firstNames.length) % lastNames.length]
     const domain = domains[(i - 1) % domains.length]
     
-    // Generate random date within last 3 years
-    const randomDays = Math.floor(Math.random() * 1095) // 3 years in days
-    const createdAt = new Date(Date.now() - (randomDays * 24 * 60 * 60 * 1000))
+    // Generate random date within last 3 years and next 1 year
+    const randomDays = Math.floor(Math.random() * 1460) - 365 // 4 years range, 1 year future
+    const createdAt = new Date(Date.now() + (randomDays * 24 * 60 * 60 * 1000))
     
     users.push({
       id: i,
