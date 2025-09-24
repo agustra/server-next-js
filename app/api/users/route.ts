@@ -42,6 +42,9 @@ export async function GET(request: Request) {
   const ageSearch = searchParams.get('columns[5][search][value]') || ''
   const createdAtSearch = searchParams.get('columns[6][search][value]') || ''
   
+  // ModernTable filters
+  const filtersParam = searchParams.get('filters[created_at]') || ''
+  
   // Advanced date filters
   const dateFilter = searchParams.get('date') || ''
   const startDate = searchParams.get('start_date') || ''
@@ -55,7 +58,8 @@ export async function GET(request: Request) {
     lastName: lastNameSearch,
     email: emailSearch,
     phone: phoneSearch,
-    age: ageSearch
+    age: ageSearch,
+    createdAtFilter: filtersParam
   })
   
   // Generate all users for filtering
@@ -106,6 +110,14 @@ export async function GET(request: Request) {
   if (createdAtSearch) {
     filteredUsers = filteredUsers.filter(user => 
       user.created_at.includes(createdAtSearch)
+    )
+  }
+  
+  // ModernTable date filter
+  if (filtersParam && /^\d{4}-\d{2}-\d{2}$/.test(filtersParam)) {
+    console.log('📅 Filtering by date:', filtersParam)
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at === filtersParam
     )
   }
   
