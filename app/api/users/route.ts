@@ -29,19 +29,64 @@ export async function GET(request: Request) {
   const length = parseInt(searchParams.get('length') || '10')
   const searchValue = searchParams.get('search[value]') || ''
   
-  console.log('🔍 Server received search:', searchValue)
+  // Column-specific searches
+  const firstNameSearch = searchParams.get('columns[1][search][value]') || ''
+  const lastNameSearch = searchParams.get('columns[2][search][value]') || ''
+  const emailSearch = searchParams.get('columns[3][search][value]') || ''
+  const phoneSearch = searchParams.get('columns[4][search][value]') || ''
+  const ageSearch = searchParams.get('columns[5][search][value]') || ''
+  
+  console.log('🔍 Search values:', {
+    global: searchValue,
+    firstName: firstNameSearch,
+    lastName: lastNameSearch,
+    email: emailSearch,
+    phone: phoneSearch,
+    age: ageSearch
+  })
   
   // Generate all users for filtering
   const allUsers = generateUsers(0, 10000)
   
-  // Filter users based on search
+  // Filter users based on global search
   let filteredUsers = allUsers
   if (searchValue) {
-    filteredUsers = allUsers.filter(user => 
+    filteredUsers = filteredUsers.filter(user => 
       user.firstName.toLowerCase().includes(searchValue.toLowerCase()) ||
       user.lastName.toLowerCase().includes(searchValue.toLowerCase()) ||
       user.email.toLowerCase().includes(searchValue.toLowerCase()) ||
       user.phone.includes(searchValue)
+    )
+  }
+  
+  // Filter by column-specific searches
+  if (firstNameSearch) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.firstName.toLowerCase().includes(firstNameSearch.toLowerCase())
+    )
+  }
+  
+  if (lastNameSearch) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.lastName.toLowerCase().includes(lastNameSearch.toLowerCase())
+    )
+  }
+  
+  if (emailSearch) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.email.toLowerCase().includes(emailSearch.toLowerCase())
+    )
+  }
+  
+  if (phoneSearch) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.phone.includes(phoneSearch)
+    )
+  }
+  
+  if (ageSearch) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.age.toString().includes(ageSearch)
     )
   }
   
