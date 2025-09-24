@@ -42,9 +42,12 @@ export async function GET(request: Request) {
   const ageSearch = searchParams.get('columns[5][search][value]') || ''
   const createdAtSearch = searchParams.get('columns[6][search][value]') || ''
   
-  // Date range filters
-  const dateFrom = searchParams.get('dateFrom') || ''
-  const dateTo = searchParams.get('dateTo') || ''
+  // Advanced date filters
+  const dateFilter = searchParams.get('date') || ''
+  const startDate = searchParams.get('start_date') || ''
+  const endDate = searchParams.get('end_date') || ''
+  const yearFilter = searchParams.get('year') || ''
+  const monthFilter = searchParams.get('month') || ''
   
   console.log('🔍 Search values:', {
     global: searchValue,
@@ -106,18 +109,38 @@ export async function GET(request: Request) {
     )
   }
   
-  // Date range filtering
-  if (dateFrom) {
+  // Advanced date filtering
+  if (dateFilter && /^\d{4}-\d{2}-\d{2}$/.test(dateFilter)) {
     filteredUsers = filteredUsers.filter(user => 
-      user.created_at >= dateFrom
+      user.created_at === dateFilter
     )
   }
   
-  if (dateTo) {
+  if (startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
     filteredUsers = filteredUsers.filter(user => 
-      user.created_at <= dateTo
+      user.created_at >= startDate
     )
   }
+  
+  if (endDate && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at <= endDate
+    )
+  }
+  
+  if (yearFilter && /^\d{4}$/.test(yearFilter)) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at.startsWith(yearFilter)
+    )
+  }
+  
+  if (monthFilter && /^\d{4}-\d{2}$/.test(monthFilter)) {
+    filteredUsers = filteredUsers.filter(user => 
+      user.created_at.startsWith(monthFilter)
+    )
+  }
+  
+
   
   // Paginate filtered results
   const paginatedUsers = filteredUsers.slice(start, start + length)
