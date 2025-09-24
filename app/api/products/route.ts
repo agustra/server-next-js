@@ -13,6 +13,10 @@ function generateProducts() {
     const brand = brands[Math.floor(Math.random() * brands.length)];
     const status = statuses[Math.floor(Math.random() * statuses.length)];
     
+    // Generate random date within last 3 years and next 1 year
+    const randomDays = Math.floor(Math.random() * 1460) - 365 // 4 years range, 1 year future
+    const createdAt = new Date(Date.now() + (randomDays * 24 * 60 * 60 * 1000))
+    
     products.push({
       id: i,
       productName: `${brand} Product ${i}`,
@@ -24,7 +28,7 @@ function generateProducts() {
       customerRating: (Math.random() * 5).toFixed(1),
       productDescription: `High quality ${category.toLowerCase()} product from ${brand}`,
       productSku: `SKU-${String(i).padStart(6, '0')}`,
-      createdDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      created_at: createdAt.toISOString().split('T')[0] // YYYY-MM-DD format
     });
   }
   
@@ -63,10 +67,42 @@ export async function GET(request: NextRequest) {
     const orderColumn = parseInt(searchParams.get('order[0][column]') || '0');
     const orderDir = searchParams.get('order[0][dir]') || 'asc';
     
+    // Column-specific searches
+    const productNameSearch = searchParams.get('columns[1][search][value]') || ''
+    const categorySearch = searchParams.get('columns[2][search][value]') || ''
+    const brandSearch = searchParams.get('columns[3][search][value]') || ''
+    const priceSearch = searchParams.get('columns[4][search][value]') || ''
+    const stockSearch = searchParams.get('columns[5][search][value]') || ''
+    const statusSearch = searchParams.get('columns[6][search][value]') || ''
+    const ratingSearch = searchParams.get('columns[7][search][value]') || ''
+    
+    // Filter parameters
+    const dateFilter = searchParams.get('date') || ''
+    const startDate = searchParams.get('start_date') || ''
+    const endDate = searchParams.get('end_date') || ''
+    const yearFilter = searchParams.get('year') || ''
+    const monthFilter = searchParams.get('month') || ''
+    
     const categoryFilter = searchParams.get('category') || '';
     const statusFilter = searchParams.get('status') || '';
     const priceMin = parseFloat(searchParams.get('priceMin') || '0');
     const priceMax = parseFloat(searchParams.get('priceMax') || '999999');
+    
+    console.log('🔍 Search values:', {
+      global: searchValue,
+      productName: productNameSearch,
+      category: categorySearch,
+      brand: brandSearch,
+      price: priceSearch,
+      stock: stockSearch,
+      status: statusSearch,
+      rating: ratingSearch,
+      date: dateFilter,
+      startDate: startDate,
+      endDate: endDate,
+      year: yearFilter,
+      month: monthFilter
+    });
     
     let filteredProducts = [...allProducts];
     
@@ -93,6 +129,85 @@ export async function GET(request: NextRequest) {
     filteredProducts = filteredProducts.filter(product => 
       product.unitPrice >= priceMin && product.unitPrice <= priceMax
     );
+    
+    // Filter by column-specific searches
+    if (productNameSearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.productName.toLowerCase().includes(productNameSearch.toLowerCase())
+      )
+    }
+    
+    if (categorySearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.categoryName.toLowerCase().includes(categorySearch.toLowerCase())
+      )
+    }
+    
+    if (brandSearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.brandName.toLowerCase().includes(brandSearch.toLowerCase())
+      )
+    }
+    
+    if (priceSearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.unitPrice.toString().includes(priceSearch)
+      )
+    }
+    
+    if (stockSearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.stockQuantity.toString().includes(stockSearch)
+      )
+    }
+    
+    if (statusSearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.stockStatus.toLowerCase().includes(statusSearch.toLowerCase())
+      )
+    }
+    
+    if (ratingSearch) {
+      filteredProducts = filteredProducts.filter(product => 
+        product.customerRating.toString().includes(ratingSearch)
+      )
+    }
+    
+    // Date filters
+    if (dateFilter && /^\d{4}-\d{2}-\d{2}$/.test(dateFilter)) {
+      console.log('📅 Filtering by date:', dateFilter)
+      filteredProducts = filteredProducts.filter(product => 
+        product.created_at === dateFilter
+      )
+    }
+    
+    if (startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      console.log('📅 Filtering from date:', startDate)
+      filteredProducts = filteredProducts.filter(product => 
+        product.created_at >= startDate
+      )
+    }
+    
+    if (endDate && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      console.log('📅 Filtering to date:', endDate)
+      filteredProducts = filteredProducts.filter(product => 
+        product.created_at <= endDate
+      )
+    }
+    
+    if (yearFilter && /^\d{4}$/.test(yearFilter)) {
+      console.log('📅 Filtering by year:', yearFilter)
+      filteredProducts = filteredProducts.filter(product => 
+        product.created_at.startsWith(yearFilter)
+      )
+    }
+    
+    if (monthFilter && /^\d{4}-\d{2}$/.test(monthFilter)) {
+      console.log('📅 Filtering by month:', monthFilter)
+      filteredProducts = filteredProducts.filter(product => 
+        product.created_at.startsWith(monthFilter)
+      )
+    }
     
     const columns = ['id', 'productName', 'categoryName', 'brandName', 'unitPrice', 'stockQuantity', 'stockStatus', 'customerRating'];
     const sortColumn = columns[orderColumn] || 'id';
